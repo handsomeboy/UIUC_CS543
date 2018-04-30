@@ -35,27 +35,32 @@ np.random.seed(111)
 torch.cuda.manual_seed_all(111)
 torch.manual_seed(111)
 
+cifar_mean = [0.5071, 0.4867, 0.4408]
+
+cifar_std = [0.2675, 0.2565, 0.2761]
+
 # <<TODO#5>> Based on the val set performance, decide how many
 # epochs are apt for your model.
 # ---------
-EPOCHS = 15
+EPOCHS = 20
 # ---------
 
 IS_GPU = True
 TEST_BS = 256
 TOTAL_CLASSES = 100
 TRAIN_BS = 32
-PATH_TO_CIFAR100_CS543 = "/home/yunan/Downloads/cs543"
+PATH_TO_CIFAR100_CS543 = "/home/rohita2/CS543_MP4/"
+#PATH_TO_CIFAR100_CS543 = "/projects/training/baps/CS543/"
 
 def calculate_val_accuracy(valloader, is_gpu):
     """ Util function to calculate val set accuracy,
     both overall and per class accuracy
     Args:
-        valloader (torch.utils.data.DataLoader): val set
+        valloader (torch.utils.data.DataLoader): val set 
         is_gpu (bool): whether to run on GPU
     Returns:
         tuple: (overall accuracy, class level accuracy)
-    """
+    """    
     correct = 0.
     total = 0.
     predictions = []
@@ -98,7 +103,7 @@ labels while all the labels in the test set are set to 0.
 # [-1, 1].
 
 
-# <<TODO#1>> Use transforms.Normalize() with the right parameters to
+# <<TODO#1>> Use transforms.Normalize() with the right parameters to 
 # make the data well conditioned (zero mean, std dev=1) for improved training.
 # <<TODO#2>> Try using transforms.RandomCrop() and/or transforms.RandomHorizontalFlip()
 # to augment training data.
@@ -107,10 +112,15 @@ labels while all the labels in the test set are set to 0.
 # You shouldn't have any data augmentation in test_transform (val or test data is never augmented).
 # ---------------------
 
-train_transform = transforms.Compose(
-    [transforms.ToTensor()])
+train_transform = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(cifar_mean, cifar_std),
+])
 test_transform = transforms.Compose(
-    [transforms.ToTensor()])
+		[transforms.ToTensor(),
+    transforms.Normalize(cifar_mean, cifar_std)])
 # ---------------------
 
 trainset = CIFAR100_CS543(root=PATH_TO_CIFAR100_CS543, fold="train",
@@ -157,8 +167,8 @@ import torch.nn.functional as F
 class BaseNet(nn.Module):
     def __init__(self):
         super(BaseNet, self).__init__()
-
-        # <<TODO#3>> Add more conv layers with increasing
+        
+        # <<TODO#3>> Add more conv layers with increasing 
         # output channels
         # <<TODO#4>> Add normalization layers after conv
         # layers (nn.BatchNorm2d)
@@ -170,111 +180,29 @@ class BaseNet(nn.Module):
         # Do not have a maxpool layer after every conv layer in your
         # deeper network as it leads to too much loss of information.
 
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.conv1 = nn.Conv2d(3, 32, 5, padding=2) 
+        self.conv1_bn = nn.BatchNorm2d(32)
+        self.pool  = nn.MaxPool2d(2, 2)            
+        self.conv2 = nn.Conv2d(32, 64, 5, padding=2)
+        self.conv2_bn = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(64, 128, 5, padding=2)
+        self.conv3_bn = nn.BatchNorm2d(128)
+        self.conv4 = nn.Conv2d(128, 256, 5, padding=2)
+        self.conv4_bn = nn.BatchNorm2d(256)
 
+        #self.dropout = nn.Dropout(0.5)
         # <<TODO#3>> Add more linear (fc) layers
         # <<TODO#4>> Add normalization layers after linear and
         # experiment inserting them before or after ReLU (nn.BatchNorm1d)
         # More on nn.sequential:
         # http://pytorch.org/docs/master/nn.html#torch.nn.Sequential
-
-        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
-        self.bn1 = nn.BatchNorm2d(64)
-
-        self.conv2 = nn.Conv2d(64, 64, 3, padding=1)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.conv3 = nn.Conv2d(64, 64, 3, padding=1)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.shortcut1 = nn.Sequential()
-
-        self.conv4 = nn.Conv2d(64, 64, 3, padding=1)
-        self.bn4 = nn.BatchNorm2d(64)
-        self.conv5 = nn.Conv2d(64, 64, 3, padding=1)
-        self.bn5 = nn.BatchNorm2d(64)
-
-
-        self.shortcut2 = nn.Sequential()
-
-        self.conv6 = nn.Conv2d(64, 128, 3, padding=1)
-        self.bn6 = nn.BatchNorm2d(128)
-        self.conv7 = nn.Conv2d(128, 128, 3, padding=1)
-        self.bn7 = nn.BatchNorm2d(128)
-        self.shortcut3 = nn.Sequential(
-            nn.Conv2d(64, 128, 1, padding=0, bias=False),
-            nn.BatchNorm2d(128))
-
-        self.pool1 = nn.MaxPool2d(2, 2)
-
-        self.conv8 = nn.Conv2d(128, 128, 3, padding=1)
-        self.bn8 = nn.BatchNorm2d(128)
-        self.conv9 = nn.Conv2d(128, 128, 3, padding=1)
-        self.bn9 = nn.BatchNorm2d(128)
-        self.shortcut4 = nn.Sequential()
-
-        self.conv10 = nn.Conv2d(128, 128, 3, padding=1)
-        self.bn10 = nn.BatchNorm2d(128)
-        self.conv11 = nn.Conv2d(128, 128, 3, padding=1)
-        self.bn11 = nn.BatchNorm2d(128)
-        self.shortcut5 = nn.Sequential()
-
-        self.conv12 = nn.Conv2d(128, 256, 3, padding=1)
-        self.bn12 = nn.BatchNorm2d(256)
-        self.conv13 = nn.Conv2d(256, 256, 3, padding=1)
-        self.bn13 = nn.BatchNorm2d(256)
-        self.shortcut6 = nn.Sequential(
-            nn.Conv2d(128, 256, 1, padding=0, bias=False),
-            nn.BatchNorm2d(256))
-        self.pool2 = nn.MaxPool2d(2, 2)
-
-        self.conv14 = nn.Conv2d(256, 256, 3, padding=1)
-        self.bn14 = nn.BatchNorm2d(256)
-        self.conv15 = nn.Conv2d(256, 256, 3, padding=1)
-        self.bn15 = nn.BatchNorm2d(256)
-        self.shortcut7 = nn.Sequential()
-
-        self.conv16 = nn.Conv2d(256, 256, 3, padding=1)
-        self.bn16 = nn.BatchNorm2d(256)
-        self.conv17 = nn.Conv2d(256, 256, 3, padding=1)
-        self.bn17 = nn.BatchNorm2d(256)
-        self.shortcut8 = nn.Sequential()
-
-        self.conv18 = nn.Conv2d(256, 512, 3, padding=1)
-        self.bn18 = nn.BatchNorm2d(512)
-        self.conv19 = nn.Conv2d(512, 512, 3, padding=1)
-        self.bn19 = nn.BatchNorm2d(512)
-        self.shortcut9 = nn.Sequential(
-            nn.Conv2d(256, 512, 1, padding=0, bias=False),
-            nn.BatchNorm2d(512))
-        self.pool3 = nn.MaxPool2d(2, 2)
-
-        self.conv20 = nn.Conv2d(512, 512, 3, padding=1)
-        self.bn20 = nn.BatchNorm2d(512)
-        self.conv21 = nn.Conv2d(512, 512, 3, padding=1)
-        self.bn21 = nn.BatchNorm2d(512)
-        self.shortcut10 = nn.Sequential()
-
-        self.conv22 = nn.Conv2d(512, 512, 3, padding=1)
-        self.bn22 = nn.BatchNorm2d(512)
-        self.conv23 = nn.Conv2d(512, 512, 3, padding=1)
-        self.bn23 = nn.BatchNorm2d(512)
-        self.shortcut11 = nn.Sequential()
-
-        self.conv24 = nn.Conv2d(512, 1024, 3, padding=1)
-        self.bn24 = nn.BatchNorm2d(1024)
-        self.conv25 = nn.Conv2d(1024, 1024, 3, padding=1)
-        self.bn25 = nn.BatchNorm2d(1024)
-        self.shortcut12 = nn.Sequential(
-            nn.Conv2d(512, 1024, 1, padding=0, bias=False),
-            nn.BatchNorm2d(1024))
-
-        self.pool4 = nn.AvgPool2d(4, 4)
-
+        
         self.fc_net = nn.Sequential(
-            nn.Linear(1024, 512),
+            nn.Linear(256 * 4 * 4, TOTAL_CLASSES*3),
             nn.ReLU(inplace=True),
-            nn.Linear(512, TOTAL_CLASSES),
+            nn.Linear(TOTAL_CLASSES*3, TOTAL_CLASSES*2),
+            nn.ReLU(inplace=True),
+            nn.Linear(TOTAL_CLASSES*2, TOTAL_CLASSES),
         )
 
     def forward(self, x):
@@ -282,69 +210,23 @@ class BaseNet(nn.Module):
         # <<TODO#3&#4>> Based on the above edits, you'll have
         # to edit the forward pass description here.
 
-        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.pool(F.relu(self.conv1_bn(self.conv1(x)))) # 16x16
+        # Output size = 28//2 x 28//2 = 14 x 14
 
-        tempx = F.relu(self.bn2(self.conv2(x)))
-        tempx = F.relu(self.bn3(self.conv3(tempx)))
-        x = tempx + self.shortcut1(x)
+        x = F.relu(self.conv2_bn(self.conv2(x)))
+        # Output size = 10//2 x 10//2 = 5 x 5
 
-        tempx = F.relu(self.bn4(self.conv4(x)))
-        tempx = F.relu(self.bn5(self.conv5(tempx)))
-        x = tempx + self.shortcut2(x)
-
-        tempx = F.relu(self.bn6(self.conv6(x)))
-        tempx = F.relu(self.bn7(self.conv7(tempx)))
-        x = tempx + self.shortcut3(x)
-        x = self.pool1(x)
-
-        tempx = F.relu(self.bn8(self.conv8(x)))
-        tempx = F.relu(self.bn9(self.conv9(tempx)))
-        x = tempx + self.shortcut4(x)
-
-        tempx = F.relu(self.bn10(self.conv10(x)))
-        tempx = F.relu(self.bn11(self.conv11(tempx)))
-        x = tempx + self.shortcut5(x)
-
-        tempx = F.relu(self.bn12(self.conv12(x)))
-        tempx = F.relu(self.bn13(self.conv13(tempx)))
-        x = tempx + self.shortcut6(x)
-        x = self.pool2(x)
-
-        tempx = F.relu(self.bn14(self.conv14(x)))
-        tempx = F.relu(self.bn15(self.conv15(tempx)))
-        x = tempx + self.shortcut7(x)
-
-        tempx = F.relu(self.bn16(self.conv16(x)))
-        tempx = F.relu(self.bn17(self.conv17(tempx)))
-        x = tempx + self.shortcut8(x)
-
-        tempx = F.relu(self.bn18(self.conv18(x)))
-        tempx = F.relu(self.bn19(self.conv19(tempx)))
-        x = tempx + self.shortcut9(x)
-        x = self.pool3(x)
-
-        tempx = F.relu(self.bn20(self.conv20(x)))
-        tempx = F.relu(self.bn21(self.conv21(tempx)))
-        x = tempx + self.shortcut10(x)
-
-        tempx = F.relu(self.bn22(self.conv22(x)))
-        tempx = F.relu(self.bn23(self.conv23(tempx)))
-        x = tempx + self.shortcut11(x)
-
-        tempx = F.relu(self.bn24(self.conv24(x)))
-        tempx = F.relu(self.bn25(self.conv25(tempx)))
-        x = tempx + self.shortcut12(x)
-        x = self.pool4(x)
+        x = self.pool(F.relu(self.conv3_bn(self.conv3(x))))   # 8x8
+        x = self.pool(F.relu(self.conv4_bn(self.conv4(x))))   # 4x4
 
         # See the CS231 link to understand why this is 16*5*5!
         # This will help you design your own deeper network
-        x = x.view(-1, 1024)
-
+        x = x.view(-1, 256 * 4 * 4)
         x = self.fc_net(x)
 
         # No softmax is needed as the loss function in step 3
         # takes care of that
-
+        
         return x
 
 # Create an instance of the nn.module class defined above:
@@ -408,7 +290,7 @@ for epoch in range(EPOCHS):  # loop over the dataset multiple times
 
         # print statistics
         running_loss += loss.data[0]
-
+    
     # Normalizing the loss by the total number of train batches
     running_loss/=len(trainloader)
     print('[%d] loss: %.3f' %
@@ -470,7 +352,7 @@ for data in testloader:
     if IS_GPU:
         images = images.cuda()
         labels = labels.cuda()
-
+    
     outputs = net(Variable(images))
     _, predicted = torch.max(outputs.data, 1)
     predictions.extend(list(predicted.cpu().numpy()))
@@ -480,4 +362,5 @@ with open('submission_netid.csv', 'w') as csvfile:
     wr = csv.writer(csvfile, quoting=csv.QUOTE_ALL)
     wr.writerow(["Id", "Prediction1"])
     for l_i, label in enumerate(predictions):
-        wr.writerow([str(l_i), str(label)])
+        wr.writerow([str(l_i), str(label[0])])
+
