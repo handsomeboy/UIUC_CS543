@@ -1,0 +1,17 @@
+NN	id	validation acc	trainging loss	test acc
+normal tranform(3 * Max(kernel=2) + Avg(kernel=4) + 2 fc)	0	62	0.290	0.598
+no transform(3 * Max(kernel=2) + Avg(kernel=4) + 2 fc)	1	61	0.286
+0.5 transform(3 * Max(kernel=2) + Avg(kernel=4) + 2 fc)	2	60	0.286
+3 fc layer + 3 pooling(Max(kernel=2) + Max(kernel=3) + Avg(kernel=4))	3	63	0.374	0.62200
+4 fc layer + 4 pooling(3 * Max(kernel=2) + Avg(kernel=4))	4	59	0.598	0.604
+3 fc layer + 5 pooling(5 * Max(kernel=2)	5	53	0.887
+3 fc layer(2 Dropout layer) + 5 pooling(5 * Max(kernel=2)	6	~53	~0.9
+3 fc layer + 4 pooling(4 * Max(kernel=2))	7	61	0.129
+3 fc layer + 4 pooling(4 * Max(kernel=2))	8	~53	~1
+ResNet	9	60	0.455
+ResNet	10	63	0.268
+ResNet	11	out of memony
+ResNet	12	out of memony
+
+no batch normalization	no record, very bad performance
+
