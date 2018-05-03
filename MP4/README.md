@@ -1,5 +1,15 @@
 CS543/ECE549 Assignment 4: Deep ConvNets CIFAR100 playground
 
+Parameter tune and modeel construction:
+1.Add 4 convolutional layers. Between each two, a normalization layer is inserted. This makes our model achieves around 49% accuracy. Rationale: deeper conv layer might help develop more complex features while normalization layer between prevent overfitting.
+2.Then we add augment the data via Randomcrop of size 32 and padding size 4, as well as  RandomHorizontalFlip which further boost the 3.performance to 54%.  Rationale: This helps ensure the data we feed to neural network are of the same size.
+4.For convenience reason, convolutional layer below refers a Sequential consists of one convolution layer(Conv2d), one normalization layer(Batchnorm2d)and one ReLU). Fully connected layer refers to Sequential of one linear layer, one ReLu, one linear layer. We deploy 3 convolutional layer, followed by a max pooling layer of kernel size 2, then another 3 convolutional layer followed by a max pooling layer of kernel size 2, and then 4 convolutional layer followed by a average pooling layer of kernel size 4. Lastly, results are feed into a fully connected layer. This gives us an accuracy of 61%.
+5.In (c) , we don’t transform the data, but in (d), we set the mean and std both at [0.5,0.5,0.5]. Though this extra transformation doesn’t give us obvious improvement. The accuracy actually goes down to 60%.
+6.We add an extra max pooling layer of kernel size 2 between the  8th and 9th convolutional layer, as well as three fully connected layer in the end. Howvever, the performance doesn’t get better but drop by 1% compared to (d). This is probably due to the extra pooling layer misses some information.
+7.Another pooling layer added to (e) simply makes performance worse, which reduce accuracy to 53%.
+We attempt to make up for this via adding two dropout layer after each in the end, but the performance still stucks at 53% as it was in 8. This is probably due to the fact that batch normalization, which follows each of our convolutional layer, has already played a role in regularization. This makes extra dropout layer unnecessary, if not negative.
+
+
 The goal of this assignment is to get hands-on experience with deep learning. Starting from a baseline architecture we provided, you will design an improved deep net architecture to classify (small) images of 100 categories. You will evaluate the performance of your architecture by uploading your predictions to this Kaggle competition and submit your code and report describing your implementation choices to Compass2g. This assignment must be done in your project groups and the due date is Wednesday, May 2, 11:59:59PM.
 
 ## Dataset
